@@ -37,6 +37,25 @@ export default function LoadingScreen() {
     return ASCII_CHARS[Math.floor(Math.random() * ASCII_CHARS.length)]
   }
 
+  // Function to determine if a cell is part of the cross
+  function isPartOfCross(row, col) {
+    // Calculate center points
+    const centerRow = Math.floor(rows / 2)
+    const centerCol = Math.floor(cols / 2)
+    
+    // Define cross thickness
+    const crossThickness = 3
+    
+    // Check if the cell is part of the horizontal or vertical line of the cross
+    const isHorizontal = row >= centerRow - Math.floor(crossThickness / 2) && 
+                         row <= centerRow + Math.floor(crossThickness / 2)
+    const isVertical = col >= centerCol - Math.floor(crossThickness / 2) && 
+                       col <= centerCol + Math.floor(crossThickness / 2)
+    
+    return (isHorizontal && col >= centerCol - 5 && col <= centerCol + 5) || 
+           (isVertical && row >= centerRow - 5 && row <= centerRow + 5)
+  }
+
   return (
     <div className="fixed inset-0 bg-black flex flex-col items-center justify-center">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-mono text-white text-center">
@@ -55,7 +74,7 @@ export default function LoadingScreen() {
                       repeatType: "reverse",
                       delay: ((i * cols + j) * 0.01) % 1,
                     }}
-                    className="inline-block w-[1ch]"
+                    className={`inline-block w-[1ch] ${isPartOfCross(i, j) ? 'text-red-600 font-bold' : ''}`}
                   >
                     {char}
                   </motion.span>
@@ -69,7 +88,7 @@ export default function LoadingScreen() {
           animate={{ opacity: [0.5, 1, 0.5] }}
           transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
         >
-          LOADING IDEAS
+          DIAGNOSING TWEETS
         </motion.p>
       </motion.div>
     </div>

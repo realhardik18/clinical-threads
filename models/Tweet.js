@@ -10,7 +10,7 @@ const Tweet = new mongoose.Schema({
     favorite_count:{type: Number, required: true},
     reply_count:{type: Number, required: true},
     tweet_url:{type: String, required: true},
-    category:{type: String, required: true},
+    category:{type: String, required: false}, // Changed to not required
     avatar_url:{type: String, required: true},            
 })
 

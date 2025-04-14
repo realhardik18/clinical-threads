@@ -92,8 +92,7 @@ export async function POST(request) {
             screen_name: userLegacy.screen_name,
             tweet_id: tweetData.id_str,
             tweet_text: tweetData.full_text || tweetData.text || "No text available",
-            created_at: tweet.created_at,
-            formatted_date:formattedDate,
+            created_at: formattedDate, // Fix: Use formattedDate directly
             retweet_count: tweetData.retweet_count || 0,
             favorite_count: tweetData.favorite_count || 0,
             reply_count: tweetData.reply_count || 0,
