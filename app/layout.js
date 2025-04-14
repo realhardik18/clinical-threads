@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Steal This Idea",
-  description: "135+ killer startup ideas straight from the minds of Paras Chopra and Greg Isenberg.",
+  title: "Clinical Threads",
+  description: "https://clinical-threads.vercel.app/",
 };
 
 export default function RootLayout({ children }) {
