@@ -22,6 +22,8 @@ export default function AdminPage() {
   const [isAddingTweet, setIsAddingTweet] = useState(false)
   const [isAddingCategory, setIsAddingCategory] = useState(false)
   const [message, setMessage] = useState({ text: "", type: "" })
+  const [categoryToDelete, setCategoryToDelete] = useState(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   // Handle authentication
   const handleAuthenticate = async (e) => {
@@ -225,37 +227,65 @@ export default function AdminPage() {
 
   // Handle deleting a category
   const handleDeleteCategory = async (categoryId) => {
-    if (!confirm("Are you sure you want to delete this category? This will remove the category from all tweets.")) {
-      return
-    }
-
     try {
       setMessage({ text: "Deleting category...", type: "info" })
+      
+      // Use the dynamic API route for category deletion by ID
       const response = await fetch(`/api/categories/${categoryId}`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json"
+        }
       })
 
+      // Check if the response is ok
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Failed to delete category")
+        // Safely handle potential JSON parsing errors
+        let errorMessage = "Failed to delete category";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (jsonError) {
+          console.error("Error parsing response JSON:", jsonError);
+          // Use status text if JSON parsing fails
+          errorMessage = `Server error: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
-      // Refresh categories list
-      const categoriesResponse = await fetch("/api/categories")
-      const { categories: categoriesData } = await categoriesResponse.json()
-      setCategories(categoriesData)
+      // Optimistically update UI by removing the deleted category
+      setCategories(prevCategories => 
+        prevCategories.filter(category => category._id !== categoryId)
+      );
       
-      // Refresh tweets that might have had this category
-      const tweetsResponse = await fetch("/api/tweets")
-      const { tweets: tweetsData } = await tweetsResponse.json()
-      setTweets(tweetsData)
-      setFilteredTweets(tweetsData)
+      // Update tweets that might have had this category
+      // We can be more efficient by only marking tweets with this category as needing update
+      const tweetsResponse = await fetch("/api/tweets");
+      const { tweets: tweetsData } = await tweetsResponse.json();
+      setTweets(tweetsData);
+      setFilteredTweets(tweetsData);
       
-      setMessage({ text: "Category deleted successfully", type: "success" })
+      setMessage({ text: "Category deleted successfully", type: "success" });
     } catch (error) {
-      console.error("Error deleting category:", error)
-      setMessage({ text: error.message, type: "error" })
+      console.error("Error deleting category:", error);
+      setMessage({ text: error.message, type: "error" });
+    } finally {
+      // Close the modal after deletion attempt
+      setShowDeleteModal(false);
+      setCategoryToDelete(null);
     }
+  }
+
+  // Open delete confirmation modal
+  const openDeleteModal = (category) => {
+    setCategoryToDelete(category)
+    setShowDeleteModal(true)
+  }
+
+  // Close delete confirmation modal
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false)
+    setCategoryToDelete(null)
   }
 
   // Clear message after 5 seconds
@@ -577,7 +607,7 @@ export default function AdminPage() {
                           </div>
                           <div className="col-span-2 sm:col-span-1">
                             <button 
-                              onClick={() => handleDeleteCategory(category._id)}
+                              onClick={() => openDeleteModal(category)}
                               className="text-xs px-2 py-1.5 flex items-center gap-1.5 bg-white/10 hover:bg-white/20 rounded-md text-white transition-colors"
                             >
                               <Trash2 size={12} /> Delete
@@ -591,6 +621,33 @@ export default function AdminPage() {
                       No categories found. Add some categories to organize your tweets.
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Delete Category Confirmation Modal */}
+          {showDeleteModal && categoryToDelete && (
+            <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-md shadow-xl">
+                <h3 className="text-lg font-mono font-bold mb-4">Delete Category</h3>
+                <p className="mb-6 font-mono text-sm text-white/90">
+                  Are you sure you want to delete the category <span className="font-bold">#{categoryToDelete.category_name}</span>? 
+                  This will remove the category from all associated tweets.
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={closeDeleteModal}
+                    className="px-4 py-2 font-mono text-sm text-white/80 hover:text-white bg-transparent hover:bg-white/10 rounded-md transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCategory(categoryToDelete._id)}
+                    className="px-4 py-2 font-mono text-sm text-white bg-white/20 hover:bg-white/30 rounded-md transition-colors flex items-center gap-2"
+                  >
+                    <Trash2 size={14} /> Delete Category
+                  </button>
                 </div>
               </div>
             </div>
