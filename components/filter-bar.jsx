@@ -22,7 +22,6 @@ export default function FilterBar({
   isFiltering
 }) {
   const [showFilters, setShowFilters] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [availableAuthors, setAvailableAuthors] = useState([]);
 
   const filters = [
@@ -86,17 +85,6 @@ export default function FilterBar({
                 {filter.label}
               </Button>
             ))}
-            
-            {/* Advanced filters toggle */}
-            <Button
-              onClick={() => setShowAdvanced(!showAdvanced)} 
-              variant="ghost"
-              size="sm"
-              className="font-mono text-xs bg-transparent text-white/70 hover:bg-white/10 border border-white/10"
-            >
-              <span>Advanced</span>
-              <ChevronDown className={`h-3.5 w-3.5 ml-1 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
-            </Button>
           </div>
           
           {/* Results count display */}
@@ -114,8 +102,8 @@ export default function FilterBar({
           </div>
         </div>
 
-        {/* Advanced filters panel with animation */}
-        <div className={`transition-all duration-300 space-y-3 ${showAdvanced ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+        {/* All filters panel (previously advanced filters) */}
+        <div className="space-y-3">
           {/* Category filter section */}
           <div className="border-b border-white/10 pb-3">
             <p className="text-xs font-mono text-white mb-2 flex items-center">
