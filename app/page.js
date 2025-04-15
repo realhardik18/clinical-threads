@@ -5,6 +5,7 @@ import TweetFeed from "@/components/tweet-feed"
 import SearchBar from "@/components/search-bar"
 import FilterBar from "@/components/filter-bar"
 import LoadingScreen from "@/components/loading-screen"
+import Image from "next/image"
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true)
@@ -190,10 +191,18 @@ export default function Home() {
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <header className="mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-            <h1 className="text-3xl font-mono font-bold tracking-tight text-center sm:text-left">Clinical Threads</h1>
+            <div className="flex items-center">
+              <Image 
+                src="/header.jpeg" 
+                alt="Clinical Threads Logo" 
+                width={128} 
+                height={128} 
+                className="object-contain"
+              />
+            </div>
             <div className="text-center sm:text-right text-sm text-white/70 font-mono space-y-1.5">              
-            <p>a curated collection of clinical tweets</p>
-            <p>organized categorically for your ease</p>
+              <p>a curated collection of clinical tweets</p>
+              <p>organized categorically for your ease</p>
               <p>made by <a href="https://x.com/@saketh_vinj" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline hover:text-cyan-300 transition-colors">@saketh_vinj</a></p>
             </div>
           </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Filter, ChevronDown, X, Check, Loader2 } from "lucide-react"
+import { X, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge";
 
@@ -21,7 +21,6 @@ export default function FilterBar({
   totalCount,
   isFiltering
 }) {
-  const [showFilters, setShowFilters] = useState(false);
   const [availableAuthors, setAvailableAuthors] = useState([]);
 
   const filters = [
@@ -50,22 +49,8 @@ export default function FilterBar({
 
   return (
     <div className="w-full md:w-auto">
-      {/* Mobile filter toggle */}
-      <Button
-        onClick={() => setShowFilters(!showFilters)}
-        variant="outline"
-        size="sm"
-        className="md:hidden w-full justify-between bg-black border-white/30 text-white hover:bg-white/10 mb-2"
-      >
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4" />
-          <span>Filter Tweets</span>
-        </div>
-        <ChevronDown className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-      </Button>
-
-      {/* Filter container */}
-      <div className={`space-y-3 bg-black border border-white/20 rounded-lg p-3 md:p-4 transition-all duration-300 ${showFilters || window.innerWidth >= 768 ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden md:max-h-[500px] md:opacity-100'}`}>
+      {/* Filter container - always visible */}
+      <div className="space-y-3 bg-black border border-white/20 rounded-lg p-3 md:p-4">
         {/* Main filters row */}
         <div className="flex flex-wrap gap-2 justify-between">
           <div className="flex flex-wrap gap-2">
@@ -102,7 +87,7 @@ export default function FilterBar({
           </div>
         </div>
 
-        {/* All filters panel (previously advanced filters) */}
+        {/* All filters panel */}
         <div className="space-y-3">
           {/* Category filter section */}
           <div className="border-b border-white/10 pb-3">
