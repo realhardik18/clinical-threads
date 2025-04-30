@@ -31,6 +31,18 @@ export default function Home() {
         const response = await fetch("/api/tweets");
         const { tweets: data } = await response.json();
 
+        // Parse date strings like "4th April 2024"
+        const parseDateString = (dateStr) => {
+          // Check if the date is in the format like "4th April 2024"
+          if (typeof dateStr === 'string' && dateStr.match(/\d+(st|nd|rd|th)\s+\w+\s+\d{4}/)) {
+            // Remove ordinal suffix (st, nd, rd, th)
+            const normalized = dateStr.replace(/(\d+)(st|nd|rd|th)/, "$1");
+            return new Date(normalized);
+          }
+          // Try standard parsing for other formats
+          return new Date(dateStr);
+        };
+
         // Map API response to the required tweet format
         const mappedTweets = data.map((item) => ({
           id: item._id,
@@ -39,11 +51,11 @@ export default function Home() {
             handle: `@${item.screen_name.toLowerCase()}`,
             avatar: "/placeholder.svg", // Placeholder for avatar
           },
-          avatar_url:item.avatar_url,
+          avatar_url: item.avatar_url,
           content: item.tweet_text,
           tweet_url: item.tweet_url,
           timestamp: item.created_at,
-          date: new Date(item.created_at),
+          date: parseDateString(item.created_at),
           likes: item.favorite_count,
           retweets: item.retweet_count,
           replies: item.reply_count,
@@ -136,7 +148,13 @@ export default function Home() {
             result = result.sort((a, b) => b.likes - a.likes)
             break
           case "recent":
-            result = result.sort((a, b) => b.date.getTime() - a.date.getTime())
+            // Ensure we're sorting by the parsed Date object, not the string
+            result = result.sort((a, b) => {
+              // Check if we have valid date objects
+              const dateA = a.date instanceof Date && !isNaN(a.date) ? a.date.getTime() : 0;
+              const dateB = b.date instanceof Date && !isNaN(b.date) ? b.date.getTime() : 0;
+              return dateB - dateA;
+            })
             break
           case "discussed":
             result = result.sort((a, b) => b.replies - a.replies)
@@ -185,7 +203,7 @@ export default function Home() {
   if (isLoading) {
     return <LoadingScreen />
   }
-
+  console.log(tweets)
   return (
     <main className="min-h-screen bg-black text-white">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
