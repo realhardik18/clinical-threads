@@ -13,7 +13,7 @@ export default function Home() {
   const [tweets, setTweets] = useState([])
   const [filteredTweets, setFilteredTweets] = useState([])
   const [searchQuery, setSearchQuery] = useState("")
-  const [activeFilter, setActiveFilter] = useState("all")
+  const [activeFilter, setActiveFilter] = useState("recent")
   const [minLikes, setMinLikes] = useState(0)
   const [dateRange, setDateRange] = useState({ start: "", end: "" })
   const [selectedAuthors, setSelectedAuthors] = useState([])
