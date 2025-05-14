@@ -24,9 +24,9 @@ export default function FilterBar({
   const [availableAuthors, setAvailableAuthors] = useState([]);
 
   const filters = [
-    { id: "all", label: "All" },
-    { id: "popular", label: "Popular" },
     { id: "recent", label: "Recent" },
+    { id: "all", label: "All" },
+    { id: "popular", label: "Popular" },    
     { id: "discussed", label: "Most Discussed" },
   ]
 
