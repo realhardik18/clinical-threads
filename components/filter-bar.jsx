@@ -33,7 +33,7 @@ export default function FilterBar({
   const handleResetFilters = () => {
     setMinLikes(0);
     setDateRange({ start: "", end: "" });
-    setActiveFilter("all");
+    setActiveFilter("recent");
     setSelectedCategories([]);
   };
 
