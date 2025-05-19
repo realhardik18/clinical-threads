@@ -24,6 +24,9 @@ export default function AdminPage() {
   const [message, setMessage] = useState({ text: "", type: "" })
   const [categoryToDelete, setCategoryToDelete] = useState(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [editingCategoryId, setEditingCategoryId] = useState(null)
+  const [editingCategoryName, setEditingCategoryName] = useState("")
+  const [isEditingCategory, setIsEditingCategory] = useState(false)
 
   // Handle authentication
   const handleAuthenticate = async (e) => {
@@ -273,6 +276,52 @@ export default function AdminPage() {
       // Close the modal after deletion attempt
       setShowDeleteModal(false);
       setCategoryToDelete(null);
+    }
+  }
+
+  // Start editing a category (open modal)
+  const startEditCategory = (category) => {
+    setEditingCategoryId(category._id)
+    setEditingCategoryName(category.category_name)
+  }
+
+  // Cancel editing (close modal)
+  const cancelEditCategory = () => {
+    setEditingCategoryId(null)
+    setEditingCategoryName("")
+    setIsEditingCategory(false)
+  }
+
+  // Save edited category (modal)
+  const handleEditCategory = async (e) => {
+    e.preventDefault()
+    if (!editingCategoryName.trim()) {
+      setMessage({ text: "Category name cannot be empty", type: "error" })
+      return
+    }
+    setIsEditingCategory(true)
+    setMessage({ text: "Updating category...", type: "info" })
+    try {
+      const response = await fetch(`/api/categories/${editingCategoryId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category_name: editingCategoryName.trim() })
+      })
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to update category")
+      }
+      // Refresh categories list
+      const categoriesResponse = await fetch("/api/categories")
+      const { categories: categoriesData } = await categoriesResponse.json()
+      setCategories(categoriesData)
+      setMessage({ text: "Category updated successfully", type: "success" })
+      cancelEditCategory()
+    } catch (error) {
+      console.error("Error updating category:", error)
+      setMessage({ text: error.message, type: "error" })
+    } finally {
+      setIsEditingCategory(false)
     }
   }
 
@@ -605,10 +654,18 @@ export default function AdminPage() {
                               #{category.category_name}
                             </span>
                           </div>
-                          <div className="col-span-2 sm:col-span-1">
+                          <div className="col-span-2 sm:col-span-1 flex gap-2">
+                            <button
+                              onClick={() => startEditCategory(category)}
+                              className="text-xs px-2 py-1.5 flex items-center gap-1.5 bg-white/10 hover:bg-white/20 rounded-md text-white transition-colors"
+                              disabled={editingCategoryId === category._id}
+                            >
+                              Edit
+                            </button>
                             <button 
                               onClick={() => openDeleteModal(category)}
                               className="text-xs px-2 py-1.5 flex items-center gap-1.5 bg-white/10 hover:bg-white/20 rounded-md text-white transition-colors"
+                              disabled={editingCategoryId === category._id}
                             >
                               <Trash2 size={12} /> Delete
                             </button>
@@ -626,6 +683,62 @@ export default function AdminPage() {
             </div>
           )}
           
+          {/* Edit Category Modal */}
+          {editingCategoryId && (
+            <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 w-full max-w-md shadow-xl">
+                <h3 className="text-lg font-mono font-bold mb-4">Edit Category</h3>
+                <form onSubmit={handleEditCategory} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-mono text-white/70 mb-1">Category Name</label>
+                    <input
+                      type="text"
+                      value={editingCategoryName}
+                      onChange={e => setEditingCategoryName(e.target.value)}
+                      className="w-full p-2.5 bg-black border border-white/20 rounded-md font-mono text-sm text-white focus:outline-none focus:ring-1 focus:ring-white focus:border-white transition-colors"
+                      autoFocus
+                      disabled={isEditingCategory}
+                    />
+                  </div>
+                  {isEditingCategory && (
+                    <div className="flex items-center gap-2 text-white/80 font-mono text-xs">
+                      <Loader2 className="animate-spin" size={16} /> Saving...
+                    </div>
+                  )}
+                  {message.text && editingCategoryId && (
+                    <div className={`p-2 rounded-md font-mono text-xs flex items-center gap-2 ${
+                      message.type === 'error' ? 'bg-red-500/20 text-red-200' :
+                      message.type === 'success' ? 'bg-green-500/20 text-green-200' :
+                      'bg-white/10 text-white'
+                    }`}>
+                      {message.type === 'error' && <AlertCircle size={14} />}
+                      {message.type === 'success' && <CheckCircle size={14} />}
+                      {message.type === 'info' && <InfoIcon size={14} />}
+                      {message.text}
+                    </div>
+                  )}
+                  <div className="flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={cancelEditCategory}
+                      className="px-4 py-2 font-mono text-sm text-white/80 hover:text-white bg-transparent hover:bg-white/10 rounded-md transition-colors"
+                      disabled={isEditingCategory}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 font-mono text-sm text-white bg-white/20 hover:bg-white/30 rounded-md transition-colors flex items-center gap-2 disabled:opacity-50"
+                      disabled={isEditingCategory}
+                    >
+                      Save
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
           {/* Delete Category Confirmation Modal */}
           {showDeleteModal && categoryToDelete && (
             <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
