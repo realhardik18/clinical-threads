@@ -5,12 +5,16 @@ import Tweet from "@/models/Tweet";
 export async function PUT(request, context) {
     await dbConnect();
     const id = context.params.id;
-    const { category } = await request.json();
+    const { category, flag } = await request.json();
 
     try {
+        const updateFields = {};
+        if (category !== undefined) updateFields.category = category;
+        if (flag !== undefined) updateFields.flag = flag;
+
         const updatedTweet = await Tweet.findByIdAndUpdate(
             id,
-            { category },
+            updateFields,
             { new: true, runValidators: true }
         );
 

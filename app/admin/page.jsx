@@ -27,6 +27,9 @@ export default function AdminPage() {
   const [editingCategoryId, setEditingCategoryId] = useState(null)
   const [editingCategoryName, setEditingCategoryName] = useState("")
   const [isEditingCategory, setIsEditingCategory] = useState(false)
+  const [flaggedTweets, setFlaggedTweets] = useState([]) // NEW
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [successMessage, setSuccessMessage] = useState("")
 
   // Handle authentication
   const handleAuthenticate = async (e) => {
@@ -87,6 +90,9 @@ export default function AdminPage() {
         const categoriesResponse = await fetch("/api/categories")
         const { categories: categoriesData } = await categoriesResponse.json()
         setCategories(categoriesData)
+
+        // Filter flagged tweets (flag === false)
+        setFlaggedTweets(tweetsData.filter(t => t.flag === false))
       } catch (error) {
         console.error("Error loading data:", error)
         setMessage({ text: "Failed to load data", type: "error" })
@@ -353,6 +359,179 @@ export default function AdminPage() {
     sessionStorage.removeItem("adminAuthenticated")
   }
 
+  // Approve flagged tweet (set flag to true)
+  const handleApproveTweet = async (tweetId) => {
+    try {
+      // Optimistically remove the tweet from flagged tweets
+      setFlaggedTweets(prev => prev.filter(t => t._id !== tweetId))
+      
+      const response = await fetch(`/api/tweets/${tweetId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ flag: true })
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to approve tweet")
+      }
+
+      // Show success message
+      setSuccessMessage("Tweet approved successfully!")
+      setShowSuccessModal(true)
+      setTimeout(() => setShowSuccessModal(false), 2000)
+      
+      // Fetch fresh data in background
+      const tweetsResponse = await fetch("/api/tweets")
+      const { tweets: tweetsData } = await tweetsResponse.json()
+      setTweets(tweetsData)
+      setFilteredTweets(tweetsData)
+      
+    } catch (error) {
+      // Revert optimistic update on error
+      const tweetsResponse = await fetch("/api/tweets")
+      const { tweets: tweetsData } = await tweetsResponse.json()
+      setTweets(tweetsData)
+      setFilteredTweets(tweetsData)
+      setFlaggedTweets(tweetsData.filter(t => t.flag === false))
+      setMessage({ text: error.message, type: "error" })
+    }
+  }
+
+  // Delete flagged tweet
+  const handleDeleteFlaggedTweet = async (tweetId) => {
+    if (!confirm("Are you sure you want to delete this tweet?")) return
+    try {
+      // Optimistically remove the tweet from flagged tweets
+      setFlaggedTweets(prev => prev.filter(t => t._id !== tweetId))
+      
+      const response = await fetch(`/api/tweets/${tweetId}`, { 
+        method: "DELETE" 
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to delete tweet")
+      }
+
+      // Show success message
+      setSuccessMessage("Tweet deleted successfully!")
+      setShowSuccessModal(true)
+      setTimeout(() => setShowSuccessModal(false), 2000)
+      
+      // Update tweets list in background
+      const tweetsResponse = await fetch("/api/tweets")
+      const { tweets: tweetsData } = await tweetsResponse.json()
+      setTweets(tweetsData)
+      setFilteredTweets(tweetsData)
+      
+    } catch (error) {
+      // Revert optimistic update on error
+      const tweetsResponse = await fetch("/api/tweets")
+      const { tweets: tweetsData } = await tweetsResponse.json()
+      setTweets(tweetsData)
+      setFilteredTweets(tweetsData)
+      setFlaggedTweets(tweetsData.filter(t => t.flag === false))
+      setMessage({ text: error.message, type: "error" })
+    }
+  }
+
+  // State for changing category for a flagged tweet
+  const [changingCategoryId, setChangingCategoryId] = useState(null)
+  const [changingCategoryValue, setChangingCategoryValue] = useState("")
+
+  // Change category and approve
+  const handleChangeCategoryAndApprove = async (tweetId) => {
+    if (!changingCategoryValue) {
+      setMessage({ text: "Please select a category", type: "error" })
+      return
+    }
+    try {
+      // Optimistically remove the tweet from flagged tweets
+      setFlaggedTweets(prev => prev.filter(t => t._id !== tweetId))
+      
+      const response = await fetch(`/api/tweets/${tweetId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          category: changingCategoryValue, 
+          flag: true 
+        })
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to update tweet")
+      }
+
+      // Reset category selection state
+      setChangingCategoryId(null)
+      setChangingCategoryValue("")
+      
+      // Show success message
+      setSuccessMessage("Tweet category updated and approved!")
+      setShowSuccessModal(true)
+      setTimeout(() => setShowSuccessModal(false), 2000)
+      
+      // Fetch fresh data in background
+      const tweetsResponse = await fetch("/api/tweets")
+      const { tweets: tweetsData } = await tweetsResponse.json()
+      setTweets(tweetsData)
+      setFilteredTweets(tweetsData)
+      
+    } catch (error) {
+      // Revert optimistic update on error
+      const tweetsResponse = await fetch("/api/tweets")
+      const { tweets: tweetsData } = await tweetsResponse.json()
+      setTweets(tweetsData)
+      setFilteredTweets(tweetsData)
+      setFlaggedTweets(tweetsData.filter(t => t.flag === false))
+      setMessage({ text: error.message, type: "error" })
+    }
+  }
+
+  // Update the formatDate function
+  const formatDate = (dateString) => {
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) {
+        throw new Error('Invalid date')
+      }
+
+      const now = new Date()
+      const diffInMinutes = Math.floor((now - date) / (1000 * 60))
+      const diffInHours = Math.floor(diffInMinutes / 60)
+      const diffInDays = Math.floor(diffInHours / 24)
+
+      if (diffInMinutes < 60) {
+        return diffInMinutes <= 1 ? 'just now' : `${diffInMinutes}m ago`
+      } else if (diffInHours < 24) {
+        return `${diffInHours}h ago`
+      } else if (diffInDays === 1) {
+        return 'Yesterday'
+      } else if (diffInDays < 7) {
+        return `${diffInDays}d ago`
+      } else {
+        return new Intl.DateTimeFormat('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        }).format(date)
+      }
+    } catch (error) {
+      console.warn(`Date formatting error for: ${dateString}`, error)
+      return 'Date unavailable'
+    }
+  }
+
+  // Format confidence score
+  const formatConfidence = (confidence) => {
+    if (typeof confidence === 'number' && confidence % 1 !== 0) {
+      return confidence.toFixed(2) + '%'
+    }
+    return Math.round(confidence) + '%'
+  }
+
   return (
     <main className="min-h-screen bg-black text-white">
       {!isAuthenticated ? (
@@ -455,6 +634,16 @@ export default function AdminPage() {
                 onClick={() => setActiveTab('categories')}
               >
                 Manage Categories
+              </button>
+              <button
+                className={`px-4 py-2 font-mono text-sm border-b-2 -mb-px transition-colors ${
+                  activeTab === 'flagged'
+                  ? 'border-white text-white'
+                  : 'border-transparent text-white/70 hover:text-white hover:border-white/40'
+                }`}
+                onClick={() => setActiveTab('flagged')}
+              >
+                AI Curated Tweets
               </button>
             </div>
             
@@ -559,7 +748,7 @@ export default function AdminPage() {
                                 </span>
                               )}
                               <span className="text-xs text-white/50">
-                                {tweet.created_at}
+                                {formatDate(tweet.created_at)}
                               </span>
                             </div>
                             
@@ -610,7 +799,7 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
-          ) : (
+          ) : activeTab === 'categories' ? (
             <div>
               {/* Add category form */}
               <div className="mb-8 p-4 sm:p-6 border border-white/20 bg-white/5 rounded-lg shadow-lg">
@@ -679,6 +868,140 @@ export default function AdminPage() {
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+          ) : (
+            // Flagged Tweets Tab
+            <div>
+              <h2 className="text-xl font-mono font-semibold mb-4 text-white">AI Curated Tweets ({flaggedTweets.length})</h2>
+              <div className="grid grid-cols-1 gap-4">
+                {flaggedTweets.length > 0 ? (
+                  flaggedTweets.map((tweet) => {
+                    const confidence = Math.round((tweet.tagging_confidence ?? 0) * 100)
+                    let barColor = "bg-red-500"
+                    if (confidence >= 80) barColor = "bg-green-500"
+                    else if (confidence >= 50) barColor = "bg-yellow-500"
+                    
+                    return (
+                      <div key={tweet._id} 
+                        className="border border-white/20 rounded-lg bg-white/5 p-4 hover:bg-white/10 transition-all shadow-lg"
+                      >
+                        {/* Header - Author Info */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center space-x-3">
+                            {tweet.avatar_url && (
+                              <img src={tweet.avatar_url} alt={tweet.screen_name} className="w-8 h-8 rounded-full" />
+                            )}
+                            <div>
+                              <span className="text-white font-mono">@{tweet.screen_name}</span>
+                              <span className="text-xs text-white/50 block">{formatDate(tweet.created_at)}</span>
+                            </div>
+                          </div>
+                          <a
+                            href={tweet.tweet_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-md text-center text-xs text-white font-mono flex items-center gap-1.5"
+                          >
+                            <ExternalLink size={12} /> View Tweet
+                          </a>
+                        </div>
+
+                        {/* Tweet Content */}
+                        <p className="text-sm font-mono mb-4 text-white/90">{tweet.tweet_text}</p>
+
+                        {/* Category & Confidence */}
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div className="bg-white/5 rounded-lg p-3">
+                            <span className="text-xs text-white/50 block mb-2">Predicted Category</span>
+                            {tweet.category ? (
+                              <span className="text-sm px-2 py-1 bg-white/10 border border-white/20 text-white rounded-full">
+                                {tweet.category}
+                              </span>
+                            ) : (
+                              <span className="text-sm px-2 py-1 bg-white/5 text-white/60 rounded-full">
+                                None
+                              </span>
+                            )}
+                          </div>
+                          <div className="bg-white/5 rounded-lg p-3">
+                            <span className="text-xs text-white/50 block mb-2">AI Confidence</span>
+                            <div className="flex items-center gap-3">
+                              <div className="flex-grow h-2 bg-white/10 rounded-full overflow-hidden">
+                                <div
+                                  className={`${barColor} h-2 rounded-full transition-all duration-500`}
+                                  style={{ width: `${confidence}%` }}
+                                ></div>
+                              </div>
+                              <span className="font-mono text-sm min-w-[40px] text-right">
+                                {formatConfidence(tweet.tagging_confidence * 100)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="space-y-3">
+                          {changingCategoryId === tweet._id ? (
+                            <div className="flex flex-col gap-3 p-3 bg-white/5 rounded-lg">
+                              <select
+                                value={changingCategoryValue}
+                                onChange={e => setChangingCategoryValue(e.target.value)}
+                                className="w-full p-2 bg-black border border-white/20 rounded-md font-mono text-sm text-white"
+                              >
+                                <option value="">Select category</option>
+                                {categories.map((cat) => (
+                                  <option key={cat._id} value={cat.category_name}>
+                                    {cat.category_name}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleChangeCategoryAndApprove(tweet._id)}
+                                  className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-mono text-sm"
+                                >
+                                  Save & Approve
+                                </button>
+                                <button
+                                  onClick={() => { setChangingCategoryId(null); setChangingCategoryValue(""); }}
+                                  className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-md font-mono text-sm"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-3 gap-3">
+                              <button
+                                onClick={() => handleApproveTweet(tweet._id)}
+                                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-mono text-sm flex items-center justify-center gap-1.5"
+                              >
+                                <CheckCircle size={14} /> Approve
+                              </button>
+                              <button
+                                onClick={() => { setChangingCategoryId(tweet._id); setChangingCategoryValue(tweet.category || ""); }}
+                                className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md font-mono text-sm flex items-center justify-center gap-1.5"
+                              >
+                                Change Category
+                              </button>
+                              <button
+                                onClick={() => handleDeleteFlaggedTweet(tweet._id)}
+                                className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md font-mono text-sm flex items-center justify-center gap-1.5"
+                              >
+                                <Trash2 size={14} /> Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <div className="text-center py-12 border border-white/20 rounded-lg bg-white/5">
+                    <p className="font-mono text-white/50">No flagged tweets found.</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -763,6 +1086,14 @@ export default function AdminPage() {
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Success Modal */}
+          {showSuccessModal && (
+            <div className="fixed bottom-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-slide-up">
+              <CheckCircle size={20} />
+              <p className="font-mono text-sm">{successMessage}</p>
             </div>
           )}
         </div>

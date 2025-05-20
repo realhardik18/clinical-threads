@@ -98,7 +98,10 @@ export async function POST(request) {
             reply_count: tweetData.reply_count || 0,
             tweet_url: `https://twitter.com/${userLegacy.screen_name}/status/${tweetData.id_str}`,
             avatar_url: userLegacy.profile_image_url_https || null,
-            category: category
+            category: category,
+            tagging_confidence: 1,
+            flag: true,
+            rest_id: userData.rest_id || userData.id_str || ""
         });
         
         return NextResponse.json({ 
