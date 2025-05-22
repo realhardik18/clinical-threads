@@ -44,23 +44,25 @@ export default function Home() {
         };
 
         // Map API response to the required tweet format
-        const mappedTweets = data.map((item) => ({
-          id: item._id,
-          author: {
-            name: item.screen_name,
-            handle: `@${item.screen_name.toLowerCase()}`,
-            avatar: "/placeholder.svg", // Placeholder for avatar
-          },
-          avatar_url: item.avatar_url,
-          content: item.tweet_text,
-          tweet_url: item.tweet_url,
-          timestamp: item.created_at,
-          date: parseDateString(item.created_at),
-          likes: item.favorite_count,
-          retweets: item.retweet_count,
-          replies: item.reply_count,
-          tags: item.category ? [item.category] : [], // Use category as a tag
-        }));
+        const mappedTweets = data
+          .filter(item => item.flag === true) // Only include tweets where flag is true
+          .map((item) => ({
+            id: item._id,
+            author: {
+              name: item.screen_name,
+              handle: `@${item.screen_name.toLowerCase()}`,
+              avatar: "/placeholder.svg", // Placeholder for avatar
+            },
+            avatar_url: item.avatar_url,
+            content: item.tweet_text,
+            tweet_url: item.tweet_url,
+            timestamp: item.created_at,
+            date: parseDateString(item.created_at),
+            likes: item.favorite_count,
+            retweets: item.retweet_count,
+            replies: item.reply_count,
+            tags: item.category ? [item.category] : [], // Use category as a tag
+          }));
 
         setTweets(mappedTweets);
         setFilteredTweets(mappedTweets);
