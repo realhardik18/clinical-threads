@@ -714,7 +714,9 @@ export default function AdminPage() {
               {/* Tweets list */}
               <div className="mb-8">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-                  <h2 className="text-xl font-mono font-semibold text-white">Manage Tweets ({filteredTweets.length})</h2>
+                  <h2 className="text-xl font-mono font-semibold text-white">
+                    Manage Tweets ({filteredTweets.filter(tweet => tweet.flag === true).length})
+                  </h2>
                   <div className="w-full sm:w-auto">
                     <SearchBar value={searchQuery} onChange={setSearchQuery} />
                   </div>
@@ -725,9 +727,11 @@ export default function AdminPage() {
                     <div className="col-span-9 md:col-span-7">Tweet</div>
                     <div className="hidden md:block md:col-span-2">Actions</div>
                   </div>
-                  {filteredTweets.length > 0 ? (
+                  {filteredTweets.filter(tweet => tweet.flag === true).length > 0 ? (
                     <div className="divide-y divide-white/10">
-                      {filteredTweets.map((tweet) => (
+                      {filteredTweets
+                        .filter(tweet => tweet.flag === true)
+                        .map((tweet) => (
                         <div key={tweet._id} className="grid grid-cols-12 p-4 hover:bg-white/5 transition-colors">
                           <div className="col-span-3 md:col-span-3 font-mono text-sm flex items-center space-x-2">
                             {tweet.avatar_url && (
