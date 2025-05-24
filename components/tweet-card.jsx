@@ -25,6 +25,36 @@ export default function TweetCard({ tweet, onTagClick }) {
     }
   }, [expanded])
 
+  // Helper to linkify URLs in text
+  function linkify(text) {
+    const urlRegex = /https?:\/\/[^\s]+/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    let key = 0;
+    while ((match = urlRegex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+      parts.push(
+        <a
+          key={`url-${key++}`}
+          href={match[0]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 underline break-all hover:text-blue-500"
+        >
+          {match[0]}
+        </a>
+      );
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+    return parts;
+  }
+
   return (
     <>
       <div className="border border-white/20 rounded-lg p-4 bg-black hover:bg-black hover:border-white/50 hover:shadow-[0_0_15px_rgba(255,255,255,0.25)] transition-all duration-200 hover:scale-[1.02] h-full flex flex-col">
@@ -46,7 +76,9 @@ export default function TweetCard({ tweet, onTagClick }) {
               <p className="font-mono text-white/60 text-xs sm:text-sm w-full sm:w-auto mt-1 sm:mt-0">{tweet.timestamp}</p>
             </div>
             <div className="mb-4">
-              <p className="font-mono text-white leading-relaxed whitespace-pre-wrap">{displayContent}</p>
+              <p className="font-mono text-white leading-relaxed whitespace-pre-wrap">
+                {isLongTweet ? linkify(displayContent) : linkify(tweet.content)}
+              </p>
               {isLongTweet && (
                 <button 
                   onClick={() => setExpanded(true)} 
@@ -139,7 +171,9 @@ export default function TweetCard({ tweet, onTagClick }) {
               </button>
             </div>
             
-            <p className="font-mono text-white text-lg leading-relaxed whitespace-pre-wrap mb-6">{tweet.content}</p>
+            <p className="font-mono text-white text-lg leading-relaxed whitespace-pre-wrap mb-6">
+              {linkify(tweet.content)}
+            </p>
             
             <p className="font-mono text-white/60 mb-4">{tweet.timestamp}</p>
 
